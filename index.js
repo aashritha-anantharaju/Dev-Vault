@@ -1,7 +1,12 @@
 import express from 'express';
+import connectDB from './db.js';
+import notesRouter from './routes/notes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to Database
+connectDB();
 
 // Standard middleware
 app.use(express.json());
@@ -13,22 +18,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to your modern Express.js API!',
-    status: 'Running',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
-  });
-});
+// --- API Routes ---
+app.use('/api/notes', notesRouter);
 
 // 404 Route handler
 app.use((req, res, next) => {
