@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchNotes, createNote, updateNote } from './api'
+import { useQuery } from '@tanstack/react-query'
+import { fetchNotes } from './api'
 import type { Note } from './api'
+import { NoteForm } from './components/notes/form'
 import './App.css'
 
 function App() {
-  const queryClient = useQueryClient()
-  
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
@@ -46,88 +45,19 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentNote, setCurrentNote] = useState<Note | null>(null) // null = creating, Note = editing
 
-  // Form Fields
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [image, setImage] = useState('')
-  const [link, setLink] = useState('')
-  const [formError, setFormError] = useState<string | null>(null)
-
-  // Mutations
-  const createNoteMutation = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] })
-      setIsModalOpen(false)
-    },
-    onError: (err) => {
-      console.error(err)
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while saving the note.'
-      setFormError(errorMessage)
-    }
-  })
-
-  const updateNoteMutation = useMutation({
-    mutationFn: ({ id, note }: { id: string; note: Parameters<typeof updateNote>[1] }) => updateNote(id, note),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] })
-      setIsModalOpen(false)
-    },
-    onError: (err) => {
-      console.error(err)
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while saving the note.'
-      setFormError(errorMessage)
-    }
-  })
-
-  const submitting = createNoteMutation.isPending || updateNoteMutation.isPending
-
   // Since search is handled on the backend, filteredNotes is directly the fetched notes
   const filteredNotes = notes
 
   // Open modal for creating a new note
   const handleOpenCreateModal = () => {
     setCurrentNote(null)
-    setTitle('')
-    setDescription('')
-    setImage('')
-    setLink('')
-    setFormError(null)
     setIsModalOpen(true)
   }
 
   // Open modal for editing a note
   const handleOpenEditModal = (note: Note) => {
     setCurrentNote(note)
-    setTitle(note.title)
-    setDescription(note.description)
-    setImage(note.image || '')
-    setLink(note.link || '')
-    setFormError(null)
     setIsModalOpen(true)
-  }
-
-  // Handle Form Submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title.trim() || !description.trim()) {
-      setFormError('Title and description are required.')
-      return
-    }
-
-    setFormError(null)
-    const payload = {
-      title: title.trim(),
-      description: description.trim(),
-      image: image.trim(),
-      link: link.trim(),
-    }
-
-    if (currentNote) {
-      updateNoteMutation.mutate({ id: currentNote._id, note: payload })
-    } else {
-      createNoteMutation.mutate(payload)
-    }
   }
 
   // Stats calculation
@@ -302,73 +232,7 @@ function App() {
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">{currentNote ? 'Edit Developer Note' : 'Add Developer Note'}</h3>
-            
-            {formError && <div className="error-banner" style={{ marginBottom: '16px' }}>{formError}</div>}
-            
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="title">Title *</label>
-                <input
-                  id="title"
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Git Cheat Sheet, Docker Basics"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  disabled={submitting}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="description">Description / Content *</label>
-                <textarea
-                  id="description"
-                  className="form-textarea"
-                  placeholder="Summarize the core takeaways, command cheat sheets, or tips..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={submitting}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="link">Reference URL</label>
-                <input
-                  id="link"
-                  type="url"
-                  className="form-input"
-                  placeholder="e.g. https://docs.docker.com"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="image">Banner Image URL</label>
-                <input
-                  id="image"
-                  type="url"
-                  className="form-input"
-                  placeholder="e.g. https://images.unsplash.com/photo-..."
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)} disabled={submitting}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? 'Saving...' : currentNote ? 'Update Note' : 'Create Note'}
-                </button>
-              </div>
-            </form>
+            <NoteForm currentNote={currentNote} onClose={() => setIsModalOpen(false)} />
           </div>
         </div>
       )}
