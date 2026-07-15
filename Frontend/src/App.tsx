@@ -1,15 +1,46 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchNotes, createNote, updateNote } from './api'
 import type { Note } from './api'
 import './App.css'
 
 function App() {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
   
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
+
+  // Debounce search input
+  useEffect(() => {
+    if (!searchQuery) {
+      setDebouncedSearchQuery('')
+      return
+    }
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Fetch Notes
+  const {
+    data: notes = [],
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useQuery<Note[]>({
+    queryKey: ['notes', debouncedSearchQuery],
+    queryFn: () => fetchNotes(debouncedSearchQuery),
+  })
+
+  // Format Query Error
+  const error = useMemo(() => {
+    if (!queryError) return null
+    return queryError instanceof Error
+      ? queryError.message
+      : 'Could not connect to the API backend. Make sure the backend server is running.'
+  }, [queryError])
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -21,57 +52,38 @@ function App() {
   const [image, setImage] = useState('')
   const [link, setLink] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
 
-  // Load Notes
-  const loadNotes = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await fetchNotes()
-      setNotes(data)
-    } catch (err) {
+  // Mutations
+  const createNoteMutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] })
+      setIsModalOpen(false)
+    },
+    onError: (err) => {
       console.error(err)
-      const errorMessage = err instanceof Error ? err.message : 'Could not connect to the API backend. Make sure the backend server is running.'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while saving the note.'
+      setFormError(errorMessage)
     }
-  }
+  })
 
-  useEffect(() => {
-    let ignore = false
-    const init = async () => {
-      try {
-        const data = await fetchNotes()
-        if (!ignore) {
-          setNotes(data)
-          setError(null)
-          setLoading(false)
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error(err)
-          const errorMessage = err instanceof Error ? err.message : 'Could not connect to the API backend. Make sure the backend server is running.'
-          setError(errorMessage)
-          setLoading(false)
-        }
-      }
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ id, note }: { id: string; note: Parameters<typeof updateNote>[1] }) => updateNote(id, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] })
+      setIsModalOpen(false)
+    },
+    onError: (err) => {
+      console.error(err)
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while saving the note.'
+      setFormError(errorMessage)
     }
-    init()
-    return () => {
-      ignore = true
-    }
-  }, [])
+  })
 
-  // Filter notes based on search query
-  const filteredNotes = useMemo(() => {
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }, [notes, searchQuery])
+  const submitting = createNoteMutation.isPending || updateNoteMutation.isPending
+
+  // Since search is handled on the backend, filteredNotes is directly the fetched notes
+  const filteredNotes = notes
 
   // Open modal for creating a new note
   const handleOpenCreateModal = () => {
@@ -96,39 +108,25 @@ function App() {
   }
 
   // Handle Form Submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() || !description.trim()) {
       setFormError('Title and description are required.')
       return
     }
 
-    try {
-      setSubmitting(true)
-      setFormError(null)
-      const payload = {
-        title: title.trim(),
-        description: description.trim(),
-        image: image.trim(),
-        link: link.trim(),
-      }
+    setFormError(null)
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      image: image.trim(),
+      link: link.trim(),
+    }
 
-      if (currentNote) {
-        // Edit Note
-        const updated = await updateNote(currentNote._id, payload)
-        setNotes((prev) => prev.map((n) => (n._id === currentNote._id ? updated : n)))
-      } else {
-        // Create Note
-        const created = await createNote(payload)
-        setNotes((prev) => [created, ...prev])
-      }
-      setIsModalOpen(false)
-    } catch (err) {
-      console.error(err)
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while saving the note.'
-      setFormError(errorMessage)
-    } finally {
-      setSubmitting(false)
+    if (currentNote) {
+      updateNoteMutation.mutate({ id: currentNote._id, note: payload })
+    } else {
+      createNoteMutation.mutate(payload)
     }
   }
 
@@ -159,7 +157,7 @@ function App() {
           </div>
         </div>
         <div className="header-actions">
-          <button className="btn btn-secondary" onClick={loadNotes} title="Refresh connection">
+          <button className="btn btn-secondary" onClick={() => refetch()} title="Refresh connection">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
@@ -226,7 +224,7 @@ function App() {
       {error && <div className="error-banner">{error}</div>}
 
       {/* Main Grid */}
-      {loading ? (
+      {isLoading ? (
         <div className="loading-spinner"></div>
       ) : (
         <section className="notes-grid">

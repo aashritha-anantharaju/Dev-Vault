@@ -3,10 +3,20 @@ import Note from '../models/Note.js';
 
 const router = express.Router();
 
-// GET /api/notes - Retrieve all notes sorted by newest first
+// GET /api/notes - Retrieve all notes sorted by newest first (supports optional search query)
 router.get('/', async (req, res, next) => {
   try {
-    const notes = await Note.find().sort({ createdAt: -1 });
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query = {
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+        ],
+      };
+    }
+    const notes = await Note.find(query).sort({ createdAt: -1 });
     res.json(notes);
   } catch (error) {
     next(error);

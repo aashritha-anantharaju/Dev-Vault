@@ -10,8 +10,11 @@ export interface Note {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export async function fetchNotes(): Promise<Note[]> {
-  const response = await fetch(`${API_URL}/api/notes`);
+export async function fetchNotes(search?: string): Promise<Note[]> {
+  const url = search
+    ? `${API_URL}/api/notes?search=${encodeURIComponent(search)}`
+    : `${API_URL}/api/notes`;
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch notes');
   }
