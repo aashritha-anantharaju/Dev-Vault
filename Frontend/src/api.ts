@@ -53,3 +53,15 @@ export async function updateNote(
   }
   return response.json();
 }
+
+export async function deleteNote(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/notes/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to delete note');
+  }
+  return response.json();
+}
+
