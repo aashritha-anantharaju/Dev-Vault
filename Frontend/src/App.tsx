@@ -3,7 +3,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchNotes, deleteNote } from './api'
 import type { Note } from './api'
 import { NoteForm } from './components/notes/form'
-import './App.css'
+import { Button } from '@/components/ui/button'
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { 
+  Plus, 
+  RefreshCw, 
+  Search, 
+  ExternalLink, 
+  Pencil, 
+  Trash2, 
+  Database, 
+  Clock, 
+  Folder,
+  BookOpen
+} from 'lucide-react'
 
 function App() {
   const queryClient = useQueryClient()
@@ -48,6 +63,7 @@ function App() {
     isLoading,
     error: queryError,
     refetch,
+    isRefetching
   } = useQuery<Note[]>({
     queryKey: ['notes', debouncedSearchQuery],
     queryFn: () => fetchNotes(debouncedSearchQuery),
@@ -97,174 +113,197 @@ function App() {
   }, [notes])
 
   return (
-    <>
-      <header className="app-header">
-        <div className="logo-section">
-          <div className="logo-icon">DV</div>
-          <div>
-            <h1 className="app-title">DevVault</h1>
-            <p className="app-subtitle">Your personal developer repository of guides, tips, and links</p>
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 text-foreground pb-12">
+      {/* Sticky Premium Header */}
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20">
+              DV
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight">DevVault</h1>
+              <p className="hidden sm:block text-xs text-muted-foreground">Your personal developer repository of guides, tips, and links</p>
+            </div>
           </div>
-        </div>
-        <div className="header-actions">
-          <button className="btn btn-secondary" onClick={() => refetch()} title="Refresh connection">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </svg>
-            Refresh
-          </button>
-          <button className="btn btn-primary" onClick={handleOpenCreateModal}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add Note
-          </button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()} 
+              disabled={isLoading || isRefetching}
+              className="gap-1.5"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
+              <span className="hidden xs:inline">Refresh</span>
+            </Button>
+            <Button size="sm" onClick={handleOpenCreateModal} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              Add Note
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Stats Banner */}
-      <section className="stats-banner">
-        <div className="stat-card">
-          <div className="stat-icon-container stat-icon-purple">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Total Resources</span>
-            <span className="stat-value">{totalNotes}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-container stat-icon-green">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Last Updated</span>
-            <span className="stat-value" style={{ fontSize: '15px', fontWeight: 600, marginTop: '4px' }}>{lastUpdated}</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Search Input */}
-      <div className="search-container">
-        <div className="search-input-wrapper">
-          <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search notes, tags, guides..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {error && <div className="error-banner">{error}</div>}
-
-      {/* Main Grid */}
-      {isLoading ? (
-        <div className="loading-spinner"></div>
-      ) : (
-        <section className="notes-grid">
-          {filteredNotes.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📁</span>
-              <h3>No items found</h3>
-              <p className="empty-text">
-                {searchQuery ? `No notes matching "${searchQuery}"` : "Get started by adding your first developer resource to DevVault!"}
-              </p>
-              {!searchQuery && (
-                <button className="btn btn-primary" onClick={handleOpenCreateModal} style={{ marginTop: '8px' }}>
-                  Create Note
-                </button>
-              )}
+      <main className="container max-w-7xl mx-auto px-4 sm:px-6 mt-8 space-y-8">
+        {/* Stats Section */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card className="flex items-center gap-4 p-5 hover:shadow-xs transition-shadow">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Database className="h-6 w-6" />
             </div>
-          ) : (
-            filteredNotes.map((note) => (
-              <article className="note-card" key={note._id}>
-                {note.image ? (
-                  <img src={note.image} alt={note.title} className="note-image" onError={(e) => {
-                    // Fallback if image fails to load
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }} />
-                ) : (
-                  <div className="note-placeholder-bg">
-                    {note.title.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                
-                <div className="note-content">
-                  <div className="note-header">
-                    <h2 className="note-title">{note.title}</h2>
-                    <span className="note-date">
-                      {note.createdAt && new Date(note.createdAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </span>
-                  </div>
-                  
-                  <p className="note-description">{note.description}</p>
-                  
-                  <div className="note-footer">
-                    {note.link ? (
-                      <a href={note.link} target="_blank" rel="noopener noreferrer" className="note-link">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                          <polyline points="15 3 21 3 21 9"></polyline>
-                          <line x1="10" y1="14" x2="21" y2="3"></line>
-                        </svg>
-                        Reference Link
-                      </a>
-                    ) : (
-                      <span style={{ fontSize: '12px', color: 'var(--text)', opacity: 0.5 }}>Local Doc</span>
-                    )}
-
-                    <div className="note-actions">
-                      <button className="note-action-btn" onClick={() => handleOpenEditModal(note)} title="Edit Resource">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                      </button>
-                      <button className="note-action-btn btn-delete" onClick={() => handleDeleteNote(note._id)} title="Delete Resource">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))
-          )}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Resources</p>
+              <h3 className="text-2xl font-bold tracking-tight mt-0.5">{totalNotes}</h3>
+            </div>
+          </Card>
+          
+          <Card className="flex items-center gap-4 p-5 hover:shadow-xs transition-shadow">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Clock className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Last Updated</p>
+              <h3 className="text-lg font-semibold tracking-tight mt-0.5">{lastUpdated}</h3>
+            </div>
+          </Card>
         </section>
-      )}
 
-      {/* Add / Edit Modal */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <NoteForm currentNote={currentNote} onClose={() => setIsModalOpen(false)} />
+        {/* Search & Filter Bar */}
+        <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search notes, tags, guides..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 w-full"
+            />
           </div>
-        </div>
-      )}
-    </>
+        </section>
+
+        {error && (
+          <div className="p-4 rounded-lg bg-destructive/10 text-destructive border border-destructive/20 text-sm font-medium text-left">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Main Grid & Loading States */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-sm text-muted-foreground">Loading notes...</p>
+          </div>
+        ) : (
+          <section className="space-y-6">
+            {filteredNotes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center py-20 px-4 border border-dashed border-border rounded-2xl bg-muted/10">
+                <Folder className="h-12 w-12 text-muted-foreground/60 mb-4" />
+                <h3 className="text-lg font-semibold text-foreground">No items found</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                  {searchQuery ? `No notes matching "${searchQuery}"` : "Get started by adding your first developer resource to DevVault!"}
+                </p>
+                {!searchQuery && (
+                  <Button onClick={handleOpenCreateModal} className="mt-4 gap-1.5">
+                    <Plus className="h-4 w-4" />
+                    Create Note
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredNotes.map((note) => (
+                  <Card key={note._id} className="flex flex-col h-full overflow-hidden hover:shadow-md transition-shadow group">
+                    {/* Header Image or Custom Styled Placeholder */}
+                    <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                      {note.image ? (
+                        <img 
+                          src={note.image} 
+                          alt={note.title} 
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          }} 
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary/10 to-indigo-500/10 text-primary">
+                          <BookOpen className="h-10 w-10 opacity-60" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3 flex h-7 items-center justify-center rounded-md bg-background/90 px-2 text-[10px] font-bold tracking-wider uppercase backdrop-blur-xs text-foreground/80 shadow-xs border border-border/30">
+                        {note.link ? 'Resource' : 'Local'}
+                      </div>
+                    </div>
+
+                    <CardHeader className="flex-1 p-5 gap-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-base font-bold line-clamp-1 text-foreground tracking-tight group-hover:text-primary transition-colors">
+                          {note.title}
+                        </CardTitle>
+                        <span className="text-[11px] text-muted-foreground font-medium shrink-0 pt-0.5">
+                          {note.createdAt && new Date(note.createdAt).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      <CardDescription className="text-xs text-muted-foreground line-clamp-3 leading-relaxed mt-1">
+                        {note.description}
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardFooter className="flex items-center justify-between p-5 pt-0 mt-auto border-t border-border/40 bg-muted/10">
+                      {note.link ? (
+                        <a 
+                          href={note.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          View Link
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/60 italic font-medium">No Link</span>
+                      )}
+
+                      <div className="flex items-center gap-1.5">
+                        <Button 
+                          variant="ghost" 
+                          size="icon-xs" 
+                          onClick={() => handleOpenEditModal(note)} 
+                          title="Edit Note"
+                          className="hover:bg-muted"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon-xs" 
+                          onClick={() => handleDeleteNote(note._id)} 
+                          title="Delete Note"
+                          className="hover:bg-destructive/10 hover:text-destructive group/delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground group-hover/delete:text-destructive" />
+                        </Button>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+      </main>
+
+      {/* Add / Edit Modal using Shadcn Dialog */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <NoteForm currentNote={currentNote} onClose={() => setIsModalOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
 

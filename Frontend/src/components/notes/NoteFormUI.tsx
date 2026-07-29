@@ -1,4 +1,6 @@
 import { useFormContext } from 'react-hook-form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 export function NoteFormUI() {
   const {
@@ -7,69 +9,77 @@ export function NoteFormUI() {
   } = useFormContext()
 
   return (
-    <>
-      <div className="form-group">
-        <label className="form-label" htmlFor="title">Title *</label>
-        <input
+    <div className="space-y-4 py-2">
+      <div className="flex flex-col gap-1.5 text-left">
+        <label className="text-sm font-medium leading-none text-muted-foreground" htmlFor="title">
+          Title <span className="text-destructive">*</span>
+        </label>
+        <Input
           id="title"
           type="text"
-          className="form-input"
           placeholder="e.g. Git Cheat Sheet, Docker Basics"
           {...register('title')}
+          className="mt-1"
         />
         {errors.title && (
-          <span style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '2px', fontWeight: 500 }}>
+          <span className="text-xs font-semibold text-destructive mt-0.5">
             {errors.title.message as string}
           </span>
         )}
       </div>
 
-      <div className="form-group">
-        <label className="form-label" htmlFor="description">Description / Content *</label>
-        <textarea
+      <div className="flex flex-col gap-1.5 text-left">
+        <label className="text-sm font-medium leading-none text-muted-foreground" htmlFor="description">
+          Description / Content <span className="text-destructive">*</span>
+        </label>
+        <Textarea
           id="description"
-          className="form-textarea"
           placeholder="Summarize the core takeaways, command cheat sheets, or tips..."
           {...register('description')}
+          className="mt-1 min-h-[100px]"
         />
         {errors.description && (
-          <span style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '2px', fontWeight: 500 }}>
+          <span className="text-xs font-semibold text-destructive mt-0.5">
             {errors.description.message as string}
           </span>
         )}
       </div>
 
-      <div className="form-group">
-        <label className="form-label" htmlFor="link">Reference URL</label>
-        <input
+      <div className="flex flex-col gap-1.5 text-left">
+        <label className="text-sm font-medium leading-none text-muted-foreground" htmlFor="link">
+          Reference URL
+        </label>
+        <Input
           id="link"
           type="text"
-          className="form-input"
           placeholder="e.g. https://docs.docker.com"
           {...register('link')}
+          className="mt-1"
         />
         {errors.link && (
-          <span style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '2px', fontWeight: 500 }}>
+          <span className="text-xs font-semibold text-destructive mt-0.5">
             {errors.link.message as string}
           </span>
         )}
       </div>
 
-      <div className="form-group">
-        <label className="form-label" htmlFor="image">Banner Image URL</label>
-        <input
+      <div className="flex flex-col gap-1.5 text-left">
+        <label className="text-sm font-medium leading-none text-muted-foreground" htmlFor="image">
+          Banner Image URL
+        </label>
+        <Input
           id="image"
           type="text"
-          className="form-input"
           placeholder="e.g. https://images.unsplash.com/photo-..."
           {...register('image')}
+          className="mt-1"
         />
         {errors.image && (
-          <span style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '2px', fontWeight: 500 }}>
+          <span className="text-xs font-semibold text-destructive mt-0.5">
             {errors.image.message as string}
           </span>
         )}
       </div>
-    </>
+    </div>
   )
 }

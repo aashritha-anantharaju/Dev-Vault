@@ -6,6 +6,8 @@ import * as yup from 'yup'
 import { createNote, updateNote } from '../../api'
 import type { Note } from '../../api'
 import { NoteFormUI } from './NoteFormUI'
+import { Button } from '@/components/ui/button'
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const noteSchema = yup.object({
   title: yup.string().trim().required('Title is required.'),
@@ -87,20 +89,28 @@ export function NoteForm({ currentNote, onClose }: NoteFormProps) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)}>
-        <h3 className="modal-title">{currentNote ? 'Edit Developer Note' : 'Add Developer Note'}</h3>
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="text-xl font-bold tracking-tight text-left text-foreground">
+            {currentNote ? 'Edit Developer Note' : 'Add Developer Note'}
+          </DialogTitle>
+        </DialogHeader>
         
-        {formError && <div className="error-banner" style={{ marginBottom: '16px' }}>{formError}</div>}
+        {formError && (
+          <div className="p-3 text-sm rounded-lg bg-destructive/10 text-destructive border border-destructive/20 text-left">
+            {formError}
+          </div>
+        )}
         
         <NoteFormUI />
 
-        <div className="form-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
+        <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
+          </Button>
+          <Button type="submit" disabled={submitting}>
             {submitting ? 'Saving...' : currentNote ? 'Update Note' : 'Create Note'}
-          </button>
+          </Button>
         </div>
       </form>
     </FormProvider>
