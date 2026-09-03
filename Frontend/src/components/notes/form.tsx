@@ -13,7 +13,7 @@ const noteSchema = yup.object({
   title: yup.string().trim().required('Title is required.'),
   description: yup.string().trim().required('Description / Content is required.'),
   link: yup.string().trim().url('Reference URL must be a valid URL.').transform((value) => (!value ? undefined : value)),
-  image: yup.string().trim().url('Banner Image URL must be a valid URL.').transform((value) => (!value ? undefined : value)),
+  image: yup.string(),
 })
 
 interface NoteFormProps {
@@ -95,13 +95,13 @@ export function NoteForm({ currentNote, onClose }: NoteFormProps) {
             {currentNote ? 'Edit Developer Note' : 'Add Developer Note'}
           </DialogTitle>
         </DialogHeader>
-        
+
         {formError && (
           <div className="p-3 text-sm rounded-lg bg-destructive/10 text-destructive border border-destructive/20 text-left">
             {formError}
           </div>
         )}
-        
+
         <NoteFormUI />
 
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">

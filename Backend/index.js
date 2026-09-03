@@ -1,9 +1,10 @@
 import express from 'express';
 import connectDB from './db.js';
 import notesRouter from './routes/notes.js';
+import uploadRouter from './routes/upload.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Connect to Database
 connectDB();
@@ -31,6 +32,7 @@ app.use((req, res, next) => {
 
 // --- API Routes ---
 app.use('/api/notes', notesRouter);
+app.use('/api/upload', uploadRouter);
 
 // 404 Route handler
 app.use((req, res, next) => {

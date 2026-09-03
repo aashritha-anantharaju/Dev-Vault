@@ -65,3 +65,19 @@ export async function deleteNote(id: string): Promise<{ message: string }> {
   return response.json();
 }
 
+export async function uploadImage(file: File): Promise<{ url: string; fileName: string }> {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const response = await fetch(`${API_URL}/api/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to upload image');
+  }
+  return response.json();
+}
+
+

@@ -80,6 +80,7 @@ function App() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentNote, setCurrentNote] = useState<Note | null>(null) // null = creating, Note = editing
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
 
   // Since search is handled on the backend, filteredNotes is directly the fetched notes
   const filteredNotes = notes
@@ -217,13 +218,13 @@ function App() {
                   <Card key={note._id} className="flex flex-col h-full overflow-hidden hover:shadow-md transition-shadow group">
                     {/* Header Image or Custom Styled Placeholder */}
                     <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                      {note.image ? (
+                      {note.image && !imageErrors[note._id] ? (
                         <img 
                           src={note.image} 
                           alt={note.title} 
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" 
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          onError={() => {
+                            setImageErrors((prev) => ({ ...prev, [note._id]: true }))
                           }} 
                         />
                       ) : (
